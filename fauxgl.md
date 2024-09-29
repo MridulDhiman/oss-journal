@@ -63,6 +63,9 @@ How it works in typical rendering pipeline:
 3. Pixel Color Calculation: for each pixel covered by triangle, color is decided by invoking the fragment shader. Resulting color is blended with existing colors in the `ColorBuffer` for that pixel.
 4. Depth Management: `DepthBuffer` stores the depth of each pixel in the screen, like they would be oriented according to camera's point of view, and how it's positioned.
 
+**Clipping**
+Clipping triangles and lines against a particular clipping plane, s.t. only certain parts are visible according to view frustum. Thus, it reduces load in subsequent stages of the rendering pipeline, thus reducing rendering times.
+1. `ClipPlanes` slice has 6 `ClipPlane` struct with P being point on the plane and N being normal vector on the plane. Each plane is used to trim triangle and lines, according to view frustum of the camera.
 
-
-
+**Sutherland - Hodgman Algorithm**:
+algorithm to clip polygon (triangle in this case), against multiple clip planes. It finds out which input points are remaining after clipping the shapes, and use these output points in the next stage of rendering pipeline. 
