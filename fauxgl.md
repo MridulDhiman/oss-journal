@@ -1,6 +1,6 @@
 ### Abstract
 
-fauxgl is a CPU based 3D rendering library written in go. I am thinking of exploring it, and understanding how 3D rendering works. Let's see how it goes.
+fauxgl is a CPU based 3D rendering library written in go. It is a software based 3d rendering library and does not uses any hardware accelerators like GPUS etc.  I am thinking of exploring it, and understanding how 3D rendering works. Let's see how it goes.
 I always procrastinate trying to explore new repositories. But, not this time. 
 I am writing this blog to make myself accountable.
 
@@ -53,7 +53,5 @@ In a typical rendering pipeline:
 3. projection matrix: used to create a desired perspective, like to position objects according to the camera's perspective. 
 4. these matrices are then combined and vertices of 3d models are transformed.
 5. resulting coordinates are then mapped onto screen space for rendering.
-
-
 
 
