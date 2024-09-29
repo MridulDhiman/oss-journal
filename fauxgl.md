@@ -54,4 +54,15 @@ In a typical rendering pipeline:
 4. these matrices are then combined and vertices of 3d models are transformed.
 5. resulting coordinates are then mapped onto screen space for rendering.
 
+**Rasterization**:
+process of converting geometric objects like triangle and lines to pixels on the screen. So, basically we can convert 3d mesh to image using rasterization.
+
+How it works in typical rendering pipeline: 
+1. Vertex processing: vertices are transformed from local space to screen space using projections and perspectives according to the camera's point of view.
+2. Rasterization: `DrawTriangles()` method used for rasterize 3D mesh with triangles. Vertices of triangle are computed for their position in the screen, `drawClippedTriangle()` clips the triangle according to view frustum.
+3. Pixel Color Calculation: for each pixel covered by triangle, color is decided by invoking the fragment shader. Resulting color is blended with existing colors in the `ColorBuffer` for that pixel.
+4. Depth Management: `DepthBuffer` stores the depth of each pixel in the screen, like they would be oriented according to camera's point of view, and how it's positioned.
+
+
+
 
