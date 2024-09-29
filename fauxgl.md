@@ -35,12 +35,25 @@ It is used to represent 3D mesh, which consists of triangles(made up of 3 vertic
 and lot of other things like transformations, smoothing of meshes, mesh modifications, loading meshes to STL files etc.
 
 **Bounding Boxes**: 
-It is represented by Min, Max Vectors in `BoundaryBox` struct.
+It is a box which signifies the boundary of an object in the 3d space. It is represented by Min, Max Vectors in `BoundaryBox` struct. Each object(whether it be line/sphere/triangle) has a boundary box associated with it in the 3D space.
 It has various purposes in 3d graphics and game development:
 1. To check whether 3d objects are intersecting/touching or not. It can also be used for collision detection in 3d models. Basically, what we do is we create bounding boxes of each 3D object, and check whether they intersect or not. If they do not intersect, objects have not collided. Implementation: `Intersects()` method.
 2. Using this, we can divide our 3D space into multiple parts, and optimize the search by reducing the search space to a specific bounding box. 
 Implementation: `Contains(), ContainsBox(), Intersection()` methods are used to determine which partition an object belongs to.
 3. Frustum Culling: it is used to determine which objects are visible from camera's point of view. We create a frustum from camera's point of view. Then, the objects whose bounding boxes are completely outside the frustum, can be discarded from the rendering pipeline. 
 Implementation: we can use `Intersects()` method to determine if object is in camera point of view or not, by checking if it intersects with the view frustum of the camera.
+
+**Matrix**:
+4X4 matrix representation which is standard for 3D transformations. It is used for various transformations like translation (changing the position of object), rotation (of objects around specific axis, like aligning the object to face the camera), scaling (changing the size of objects), projection etc. 
+We can create projection matrices like frustum projection matrix (for camera's point of view of objects), often used in VRs.
+
+In a typical rendering pipeline: 
+1. object matrix: position and orient 3d models in the scene.
+2. view matrix: used to position the camera
+3. projection matrix: used to create a desired perspective, like to position objects according to the camera's perspective. 
+4. these matrices are then combined and vertices of 3d models are transformed.
+5. resulting coordinates are then mapped onto screen space for rendering.
+
+
 
 
