@@ -13,6 +13,9 @@ Some of the functions are:
 `flag.StringVar(), flag.IntVar(), flag.BoolVar()` for configuring diff. type of flags + initial config
 
 `Config` Struct: it uses `mapstructure` for directly unmarshalling of configuration data, which is in JSON, YAML format to struct.
+
+It is in-memory database which uses Append only file for persistence, and user have to authenticate with username and password to register to the dice client.
+
 3 main sections: 
 1. server
 
