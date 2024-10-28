@@ -1,5 +1,10 @@
+## Abstract 
 Project started by Arpit Bhayani. 
 It is an in-memory realtime database with Redis like commands, and SQL Like reactivity.
+
+## Index
+- [Day 1](#day-1-3rd-october-2024)
+- [Day 2](#day-2-5th-october-2024)
 
 ## Day 1 (3rd October 2024):
 `main.go`: 
@@ -19,7 +24,7 @@ It is in-memory database which uses Append only file for persistence, and user h
 3 main sections: 
 1. server
 
-diff. fields: 
+diff. fields:   
 - Addr: server IP address
 - Port: dice server port (which is 7063 by default)
 - KeepAlive: keep alive duration, for how long connection should stay alive
@@ -171,4 +176,3 @@ Potential Drawbacks
 Complexity: Integrating two logging systems adds some complexity to the codebase.
 Overhead: There might be a small performance overhead due to the translation layer between slog and zerolog.
 Maintenance: Keeping the integration up-to-date with both slog and zerolog updates might require additional effort.
-

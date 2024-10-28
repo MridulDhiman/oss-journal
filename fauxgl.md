@@ -1,4 +1,4 @@
-### Abstract
+## Abstract
 
 fauxgl is a CPU based 3D rendering library written in go. It is a software based 3d rendering library and does not uses any hardware accelerators like GPUS etc.  I am thinking of exploring it, and understanding how 3D rendering works. Let's see how it goes.
 I always procrastinate trying to explore new repositories. But, not this time. 
@@ -7,6 +7,10 @@ I am writing this blog to make myself accountable.
 I know you might be wondering, why do I want to learn how 3D rendering works. Well even I don't know, what I want to do with this. I don't even have an interest in this shit. But, as we have started it, I will see it through the end. Let's see how it goes. 
 
 So, whoever is reading this, this personal journal might be eternities long. 
+
+## Index
+
+ - [Day 1](#day-1-29th-september-2024)
 
 ### Day 1 (29th September, 2024): 
 I have cloned this repository and started exploring the components. Basically, I can see a lot of mathematical things like vertex, vector, scaler, meshes etc. Bruh, I'm so dead.
