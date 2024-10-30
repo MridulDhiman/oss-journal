@@ -99,6 +99,7 @@ In golang, there are 2 ways of naming tests, either keeping tests in the same pa
 - Input: `*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n`
 - Expected Output: `{"hello", "world"}`
 - Here length specify the length of the array
+
 ---
 - Length is written as `$5\r\n` or `*5\r\n`
 

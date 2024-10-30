@@ -122,16 +122,16 @@ Ans. slog (Go's standard logging package)
 
 Advantages:
 
-Part of the Go standard library (as of Go 1.21)
-Provides a standard interface for logging that can be used across different libraries and projects
-Structured logging support
-Leveled logging
-Contextual logging with WithGroup and WithAttrs
+- Part of the Go standard library (as of Go 1.21)
+- Provides a standard interface for logging that can be used across different libraries and projects
+- Structured logging support
+- Leveled logging
+- Contextual logging with WithGroup and WithAttrs
 
 Disadvantages:
 
-Relatively new, so it may lack some advanced features or optimizations
-May not be as performant as some third-party logging libraries
+- Relatively new, so it may lack some advanced features or optimizations
+- May not be as performant as some third-party logging libraries
 
 zerolog
 Advantages:
@@ -160,19 +160,19 @@ Contextual logging
 
 Disadvantages:
 
-Not part of the standard library, requiring an external dependency
-May have a steeper learning curve compared to simpler logging libraries
+- Not part of the standard library, requiring an external dependency
+- May have a steeper learning curve compared to simpler logging libraries
 
 Benefits of the Integration
 
-Standard Interface: By using slog as the primary interface, the code remains compatible with the Go standard library and other libraries that use slog.
-Performance: The integration allows leveraging zerolog's high-performance logging backend while using slog's interface.
-Flexibility: It's easier to switch between different logging backends (e.g., zerolog, zap) while maintaining the same slog interface in the application code.
-Feature Combination: This approach combines slog's standard interface and structured logging capabilities with zerolog's performance and additional features like pretty printing.
-Future-Proofing: As slog evolves, the application can easily adapt to new features while still benefiting from zerolog's optimizations.
+- Standard Interface: By using slog as the primary interface, the code remains compatible with the Go standard library and other libraries that use slog.
+- Performance: The integration allows leveraging zerolog's high-performance logging backend while using slog's interface.
+- Flexibility: It's easier to switch between different logging backends (e.g., zerolog, zap) while maintaining the same slog interface in the application code.
+- Feature Combination: This approach combines slog's standard interface and structured logging capabilities with zerolog's performance and additional features like pretty printing.
+- Future-Proofing: As slog evolves, the application can easily adapt to new features while still benefiting from zerolog's optimizations.
 
 Potential Drawbacks
 
-Complexity: Integrating two logging systems adds some complexity to the codebase.
-Overhead: There might be a small performance overhead due to the translation layer between slog and zerolog.
-Maintenance: Keeping the integration up-to-date with both slog and zerolog updates might require additional effort.
+- Complexity: Integrating two logging systems adds some complexity to the codebase.
+- Overhead: There might be a small performance overhead due to the translation layer between slog and zerolog.
+- Maintenance: Keeping the integration up-to-date with both slog and zerolog updates might require additional effort.
