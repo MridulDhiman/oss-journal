@@ -25,35 +25,35 @@ It is in-memory database which uses Append only file for persistence, and user h
 1. server
 
 diff. fields:   
-- Addr: server IP address
-- Port: dice server port (which is 7063 by default)
-- KeepAlive: keep alive duration, for how long connection should stay alive
-- Timeout: connection timeout
-- MaxConn: max. no. of connections to the server
-- ShardCronFrequency: frequency of shard cron jobs
-- MultiplexerPollTimeout: timeout for multiplexer polling
-- MaxClients: max. no. of clients
-- MaxMemory: max. memory usage
-- EvictionPolicy: policy for evicting data when memory limit is reached
-- EvictionRatio: ratio at which starting evicting data
-- KeysLimit: max. no. of keys
-- AOF file: append only file for persistence (Write ahead log)
-- PersistenceEnabled: whether persistence enabled
-- WriteAOFOnCleanup: Whether to write AOF on cleanup
-- LFULogFactor: Log Factor for LFU (Least frequently used)
-- LogLevel: Logging Level (like error, success, warning)
-- PrintPrettyLogs: Whether to print pretty logs
-- EnableMultiThreading: Whether to enable multithreading
-- StopMapInitialize: Initial size of store map
+- `Addr`: server IP address
+- `Port`: dice server port (which is 7063 by default)
+- `KeepAlive`: keep alive duration, for how long connection should stay alive
+- `Timeout`: connection timeout
+- `MaxConn`: max. no. of connections to the server
+- `ShardCronFrequency`: frequency of shard cron jobs
+- `MultiplexerPollTimeout`: timeout for multiplexer polling
+- `MaxClients`: max. no. of clients
+- `MaxMemory`: max. memory usage
+- `EvictionPolicy`: policy for evicting data when memory limit is reached
+- `EvictionRatio`: ratio at which starting evicting data
+- `KeysLimit`: max. no. of keys
+- `AOF`: append only file for persistence (Write ahead log)
+- `PersistenceEnabled`: whether persistence enabled
+- `WriteAOFOnCleanup`: Whether to write AOF on cleanup
+- `LFULogFactor`: Log Factor for LFU (Least frequently used)
+- `LogLevel`: Logging Level (like error, success, warning)
+- `PrintPrettyLogs`: Whether to print pretty logs
+- `EnableMultiThreading`: Whether to enable multithreading
+- `StopMapInitialize`: Initial size of store map
 
 2. auth
 
-- Username and Password for authentication
+- `Username` and `Password` for authentication
 
 3. network
 
-- IOBufferLength: length of I/O buffer
-- IOBufferLengthMAX: max. length of I/O buffer
+- `IOBufferLength`: length of I/O buffer
+- `IOBufferLengthMAX`: max. length of I/O buffer
 
 
 ## Day 2 (5th October, 2024): 
