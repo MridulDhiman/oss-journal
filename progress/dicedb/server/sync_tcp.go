@@ -1,29 +1,44 @@
 package server
 
 import (
+	"errors"
 	"io"
 	"log"
 	"net"
 	"strconv"
 
 	"github.com/MridulDhiman/dice/config"
+	"github.com/MridulDhiman/dice/core"
 )
 
 // reading from the connection
-func readFromConn(conn net.Conn) (string, error) {
+func readFromConn(conn net.Conn) (*core.RedisCmd, error) {
 	// create a buffer of 512 bytes
 	buf := make([]byte, 512);
 	n, err:= conn.Read(buf) // it reads 512 bytes from connection and stores the bytes in bytes buffer, returning buffer size
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+
+	// decode the byte slice to array of string
+	tokens, err := core.DecodeArrayString(buf[:n])
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tokens) == 0 {
+		return nil, errors.New("Cmd not found")
 	}
 	
-	return string(buf[:n]), nil
+	return &core.RedisCmd{
+		Cmd: tokens[0],
+		Args: tokens[1:],
+	}, nil
 }
 
-func writeToConn(data string, conn net.Conn) error {
+func writeToConn(cmd *core.RedisCmd, conn net.Conn) error {
 	// writing to connection
-	if _, err := conn.Write([]byte(data)); err != nil {
+	if err := core.EvalAndRespond(cmd, conn); err != nil {
 		return err
 	}
 	return nil
@@ -49,7 +64,7 @@ func RunSyncTCPServer() {
 		conn_clients+= 1;
 
 		log.Println("client connected with address: ", conn.RemoteAddr(), "concurrent clients", conn_clients)
-		data, err:= readFromConn(conn)
+		cmd, err:= readFromConn(conn)
 
 		// could not read from connection: user disconnected
 		if err != nil {
@@ -65,8 +80,8 @@ func RunSyncTCPServer() {
 			}
 
 			// echo the data back to client
-			log.Println("command", data)
-			if err:= writeToConn(data, conn); err != nil {
+			log.Println("command", cmd.Cmd)
+			if err:= writeToConn(cmd, conn); err != nil {
 				log.Println("err write: ", err)
 			}
 

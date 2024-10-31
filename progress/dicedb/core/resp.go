@@ -1,7 +1,9 @@
 package core
 
-import "errors"
-
+import (
+	"errors"
+	"fmt"
+)
 
 // reads the RESP encoded simple string from the data and returns
 // string, delta(no. of bytes consumed) and error
@@ -97,4 +99,43 @@ func Decode(data []byte) (interface{}, error) {
 	}
 	value, _, err := DecodeOne(data)
 	return value, err
+}
+
+// type asserting if Decoded output is array of strings
+func DecodeArrayString(data []byte) ([]string, error) {
+	// decode array of strings
+	value, err := Decode(data)
+	if err != nil {
+		// error occured while decoding
+		return nil, err
+	}
+	
+	// we need to know if value which is of any/interface{} is infact any[] via type assertion
+	// if that is not true: it panics
+	// This is a common pattern dealing with generic decoded data 
+	ts := value.([]interface{})
+	// make array of string of tokens of ts size
+
+	tokens := make([]string, len(ts))
+	for i := range tokens {
+		// type asserting if each individual output is of type string, otherwise it will panic
+		tokens[i] = ts[i].(string)
+	}
+	return tokens, nil
+}
+
+// encode value of any type to byte slice
+// first: is string is simple, encode to simple string, otherwise to bulk string
+func Encode(value interface{}, isSimple bool) []byte {
+	// type asserting the type of value, and if value does not matches, it will cause the program to panic
+	// We are preventing here, via switch syntax...
+	switch v := value.(type) {
+	case string:
+		// simple string
+		if isSimple {
+			return []byte(fmt.Sprintf("+%s\r\n", v))
+		}
+		return []byte(fmt.Sprintf("$%d\r\n%s\r\n", len(v), v))
+	}
+	return []byte{}	
 }
