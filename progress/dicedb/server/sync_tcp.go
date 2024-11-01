@@ -12,7 +12,7 @@ import (
 )
 
 // reading from the connection
-func readFromConn(conn net.Conn) (*core.RedisCmd, error) {
+func readFromConn(conn io.ReadWriter) (*core.RedisCmd, error) {
 	// create a buffer of 512 bytes
 	buf := make([]byte, 512);
 	n, err:= conn.Read(buf) // it reads 512 bytes from connection and stores the bytes in bytes buffer, returning buffer size
@@ -27,7 +27,7 @@ func readFromConn(conn net.Conn) (*core.RedisCmd, error) {
 	}
 
 	if len(tokens) == 0 {
-		return nil, errors.New("Cmd not found")
+		return nil, errors.New("cmd not found")
 	}
 	
 	return &core.RedisCmd{
@@ -36,7 +36,7 @@ func readFromConn(conn net.Conn) (*core.RedisCmd, error) {
 	}, nil
 }
 
-func writeToConn(cmd *core.RedisCmd, conn net.Conn) error {
+func writeToConn(cmd *core.RedisCmd, conn io.ReadWriter) error {
 	// writing to connection
 	if err := core.EvalAndRespond(cmd, conn); err != nil {
 		return err

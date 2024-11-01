@@ -3,10 +3,10 @@ package core
 import (
 	"errors"
 	"fmt"
-	"net"
+	"io"
 )
 
-func evalPING(args []string, conn net.Conn) error {
+func evalPING(args []string, conn io.ReadWriter) error {
 	// ping have only 1 argument that is, string and sends it back to the client
 	if len(args) > 1 {
 		return errors.New("ERR wrong no. of arguments for 'PING' command");
@@ -28,7 +28,7 @@ func evalPING(args []string, conn net.Conn) error {
 	return nil
 }
 
-func EvalAndRespond(cmd *RedisCmd, conn net.Conn) error {
+func EvalAndRespond(cmd *RedisCmd, conn io.ReadWriter) error {
 	fmt.Println("cmd: ", cmd.Cmd)
 
 	if cmd.Cmd == "" {
