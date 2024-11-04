@@ -30,7 +30,24 @@ func Put(k string, obj *Obj) {
 }
 
 func Get(k string) *Obj {
-	return store[k];
+	v:= store[k];
+	if v != nil {
+		// check if obj is expired or not:
+			// check if expiry set and if yes, is it expired
+		if v.ExpiresAt != -1 && v.ExpiresAt <= time.Now().UnixMilli() {
+			// if key is expired: delete the key
+				delete(store, k)
+				return nil
+		}
+	}
+	return v
 }
 
+func Del(k string) bool {
+	if _, ok:= store[k]; ok {
+		delete(store, k)
+		return true
+	}
+	return false
+}
 

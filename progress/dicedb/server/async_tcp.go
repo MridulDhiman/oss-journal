@@ -8,12 +8,15 @@ import (
 	"log"
 	"net"
 	"syscall"
+	"time"
 
 	"github.com/MridulDhiman/dice/config"
 	"github.com/MridulDhiman/dice/core"
 )
 
 var conn_clients int = 0;
+var cronFrequency = 1 * time.Second
+var lastCronExecutionTime = time.Now()
 
 func RunAsyncTCPServer() error {
 	log.Println("Starting asynchronous TCP server in: ", config.Host, config.Port)
@@ -53,6 +56,8 @@ func RunAsyncTCPServer() error {
 		return err
 	}
 
+
+
 	// create new EPOLL instance
 	epollFD, err := syscall.EpollCreate1(0);
 
@@ -71,6 +76,14 @@ func RunAsyncTCPServer() error {
 
 	// waiting for events in loop
 	for {
+		
+		// after 1 second delete the expired keys
+		if time.Now().After(lastCronExecutionTime.Add(cronFrequency)) {
+			core.DeleteExpiredKeys()
+			lastCronExecutionTime = time.Now() // update the last cron execution time to current time
+		}
+
+
 		// n ready file descriptors to which read is available
 		nevents, err:= syscall.EpollWait(epollFD, events[:], -1) // -1 timeout means wait indefinitely 
 		if err != nil {
