@@ -3,10 +3,11 @@ Project started by Arpit Bhayani.
 It is an in-memory realtime database with Redis like commands, and SQL Like reactivity.
 
 ## Index
-- [Day 1](#day-1-3rd-october-2024)
-- [Day 2](#day-2-5th-october-2024)
+- [Day 1](#day-1)
+- [Day 2](#day-2)
+- [Day 3](#day-3)
 
-## Day 1 (3rd October 2024):
+## Day 1:
 `main.go`: 
 it is the starting point of an go application.
 I can see an init() function, which implies, it will be called even before the main function, where we are configuring the flag variables for our command line.
@@ -56,7 +57,7 @@ diff. fields:
 - `IOBufferLengthMAX`: max. length of I/O buffer
 
 
-## Day 2 (5th October, 2024): 
+## Day 2: 
 Understanding dicedb internals: logger functionality
 
 - We have diff. levels of log: 
@@ -116,11 +117,12 @@ Conclusion:
 - zerolog provides pretty logs, logs with timestamps. 
 - But, it does not handles levels exclusively and need extra layer of `slog` which maintains diff. types of log levels, and subsequently we can print those pretty logs with timestamps to the console.
 
-Ques: Why use both `slog` and `zerolog`?
+#### Ques: Why use both `slog` and `zerolog`?
 
-Ans. slog (Go's standard logging package)
+Ans. 
+##### slog (Go's standard logging package)
 
-Advantages:
+##### Advantages:
 
 - Part of the Go standard library (as of Go 1.21)
 - Provides a standard interface for logging that can be used across different libraries and projects
@@ -128,13 +130,13 @@ Advantages:
 - Leveled logging
 - Contextual logging with WithGroup and WithAttrs
 
-Disadvantages:
+##### Disadvantages:
 
 - Relatively new, so it may lack some advanced features or optimizations
 - May not be as performant as some third-party logging libraries
 
-zerolog
-Advantages:
+##### zerolog
+##### Advantages:
 
 - High-performance, zero-allocation JSON logger
     - Zerolog is designed to be extremely fast and efficient.
@@ -155,24 +157,154 @@ Advantages:
     - You can customize timestamp formats, level names, and add custom fields globally.
     - It supports custom formatters and writers for complete control over log output.
 
-Built-in pretty printing for development
-Contextual logging
+- Built-in pretty printing for development
+- Contextual logging
 
-Disadvantages:
+##### Disadvantages:
 
 - Not part of the standard library, requiring an external dependency
 - May have a steeper learning curve compared to simpler logging libraries
 
-Benefits of the Integration
+##### Benefits of the Integration
 
-- Standard Interface: By using slog as the primary interface, the code remains compatible with the Go standard library and other libraries that use slog.
-- Performance: The integration allows leveraging zerolog's high-performance logging backend while using slog's interface.
-- Flexibility: It's easier to switch between different logging backends (e.g., zerolog, zap) while maintaining the same slog interface in the application code.
-- Feature Combination: This approach combines slog's standard interface and structured logging capabilities with zerolog's performance and additional features like pretty printing.
-- Future-Proofing: As slog evolves, the application can easily adapt to new features while still benefiting from zerolog's optimizations.
+- **Standard Interface**: By using slog as the primary interface, the code remains compatible with the Go standard library and other libraries that use slog.
+- **Performance**: The integration allows leveraging zerolog's high-performance logging backend while using slog's interface.
+- **Flexibility**: It's easier to switch between different logging backends (e.g., zerolog, zap) while maintaining the same slog interface in the application code.
+- **Feature Combination**: This approach combines slog's standard interface and structured logging capabilities with zerolog's performance and additional features like pretty printing.
+- **Future-Proofing**: As slog evolves, the application can easily adapt to new features while still benefiting from zerolog's optimizations.
 
 Potential Drawbacks
 
-- Complexity: Integrating two logging systems adds some complexity to the codebase.
-- Overhead: There might be a small performance overhead due to the translation layer between slog and zerolog.
-- Maintenance: Keeping the integration up-to-date with both slog and zerolog updates might require additional effort.
+- **Complexity**: Integrating two logging systems adds some complexity to the codebase.
+- **Overhead**: There might be a small performance overhead due to the translation layer between slog and zerolog.
+- **Maintenance**: Keeping the integration up-to-date with both slog and zerolog updates might require additional effort.
+
+## Day 3:
+### Websocket server implementation
+
+- Use of `gorilla/websocket` library
+```golang
+
+
+type WsServer struct {
+    upgrader websocket.Upgrader
+    server *http.Server
+}
+
+func NewWsServer() *WsServer {
+    // create new HTTP request multiplexer
+    mux := http.NewServeMux();
+    srv := &http.Server{
+        Addr : fmt.Sprintf(":%d", 3000)
+        Handler : mux
+    }
+
+    upgrader = websocket.Upgrader{
+        //CORS configuration: allowing all requests
+        CheckOrigin: func (r* http.Request) bool {
+            return true;
+        }
+    }
+
+    wsServer := &WsServer {
+        server : srv,
+        upgrader: upgrader,
+    }
+
+    mux.HandleFunc("/", WsHandler);
+    mux.HandleFunc("/health", func (w http.ResponseWriter, r* http.Request) {
+       if _, err :=  w.Write([]byte("OK")); err != nil {
+        return;
+       }
+    })
+    return wsServer;
+}
+
+
+func (s* WsServer) Run(ctx context.Context) error {
+    var wg sync.WaitGroup
+    var err error
+    wsCtx,cancelWebsocket = context.WithCancel(ctx)
+    // cancel the derived context when server stops running: when error occured
+    defer cancelWebsocket();
+
+    // HANDLING GRACEFUL SHUTDOWN OF WEBSOCKET CONNECTION
+    wg.Add(1);
+    go func() {
+        // decrement wait group counter when goroutine finish running
+        defer wg.Done();
+        // parent context cancelled
+        <-ctx.Done()
+        // so, shutdown ws server
+       err =  s.server.Shutdown(wsCtx)
+    }()
+    
+    wg.Add(1);
+    go func() {
+        defer wg.Done()
+        err = s.server.ListenAndServe()
+    }();
+
+    wg.Wait()
+    return err
+}
+
+// Websocket handler
+func (s* WsServer) WsHandler(w http.ResponseWriter, r* http.Request) {
+    // update http to websocket
+   conn, err:= s.upgrader.Upgrade(w,r,nil)
+   if err != nil {
+    return;
+   }
+
+// close ws connection
+   defer func() {
+    conn.WriteMessage(websocket.CloseMessage)
+    conn.Close()
+   }()
+
+   for {
+    // read from connection
+    _, message, err := conn.ReadMessage()
+    if err != nil {
+        break
+    }
+
+// echo back the text message to client
+    if err:= conn.WriteMessage(websocket.TextMessage,message); err != nil {
+        break
+    }
+   }
+}
+
+```
+
+
+#### Handling Graceful shutdown of websocket server
+> GRACEFUL SHUTDOWN: tries to complete all the in-flight requests before shutting down.
+1. When the parent context is cancelled, we shutdown the websocket server, waiting for it in a separate goroutine, which gets created when we run ws server.
+
+```golang
+
+go func(){
+    defer wg.Done(); // decrement the wait group counter
+<- ctx.Done() // blocking the gorouting till parent context is not cancelled
+server.Shutdown(wsCtx); // shutdown the server
+}()
+
+```
+
+#### Parent-child context relationship
+
+Context represents lifecycle of a particular operation or entire application
+
+
+Question arises as why we are shutting down websocket server on the basis of child context and not the parent context?
+
+Here's the reasoning behind this choice:
+
+1. **Parent Context Lifespan**: The parent ctx context represents the overall lifetime of the application or a specific operation. It's possible that this context may be canceled for reasons unrelated to the WebSocket server, such as a timeout or a signal received at a higher level.
+2. **WebSocket Server Lifecycle**: The WebSocket server has its own lifecycle, which should be managed independently from the parent context. If the parent context is canceled, it doesn't necessarily mean that the WebSocket server should be immediately shut down.
+3. **Shutdown Control**: By using the websocketCtx context, you can control the timeout and cancellation of the WebSocket server's shutdown process separately from the parent context. This allows you to ensure a graceful shutdown of the WebSocket server, even if the parent context is canceled prematurely.
+4. **Error Handling**: If an error occurs during the shutdown process, you can capture and handle it more easily when you're using a dedicated context for the shutdown, rather than relying on the parent context.
+
