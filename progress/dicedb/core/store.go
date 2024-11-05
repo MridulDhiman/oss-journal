@@ -1,8 +1,13 @@
 package core
 
-import "time"
+import (
+	"time"
+
+	"github.com/MridulDhiman/dice/config"
+)
 
 var store map[string]*Obj
+
 
 type Obj struct {
 	Value interface{};
@@ -25,7 +30,24 @@ func NewObj(value interface{}, durationMs int64) *Obj {
 }
 
 
+func evictFirst() {
+	for k:= range store {
+		delete(store, k)
+		return
+	}
+}
+
+func evict () {
+	switch config.EvictionStrategy {
+	case "simple-first":
+		evictFirst()
+	}
+}
+
 func Put(k string, obj *Obj) {
+	if len(store) >= config.KeysLimit {
+		evict()
+	}
 	store[k] = obj;
 }
 
