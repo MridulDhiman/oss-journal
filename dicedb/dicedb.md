@@ -3,12 +3,13 @@ Project started by Arpit Bhayani.
 It is an in-memory realtime database with Redis like commands, and SQL Like reactivity.
 
 ## Index
-- [Day 1](#day-1)
-- [Day 2](#day-2)
-- [Day 3](#day-3)
-- [Day 4](#day-4)
+- [Main Config](#main-configuration)
+- [DiceDB Internals: Logger](#dicedb-internals-logger)
+- [WebSocket Server Implementation](#websocket-server-implementation)
+- [Implementation of Append Only FIle](#implementation-of-append-only-file-aof-for-disk-persistence-in-memory-based-store)
+- [Swiss Table implementation](#swiss-table-implementation)
 
-## Day 1:
+## Main Configuration
 `main.go`: 
 it is the starting point of an go application.
 I can see an init() function, which implies, it will be called even before the main function, where we are configuring the flag variables for our command line.
@@ -58,7 +59,7 @@ diff. fields:
 - `IOBufferLengthMAX`: max. length of I/O buffer
 
 
-## Day 2: 
+## DiceDB Internals: Logger: 
 Understanding dicedb internals: logger functionality
 
 - We have diff. levels of log: 
@@ -180,8 +181,8 @@ Potential Drawbacks
 - **Overhead**: There might be a small performance overhead due to the translation layer between slog and zerolog.
 - **Maintenance**: Keeping the integration up-to-date with both slog and zerolog updates might require additional effort.
 
-## Day 3:
-### Websocket server implementation
+
+## Websocket server implementation
 
 - Use of `gorilla/websocket` library
 ```golang
@@ -309,9 +310,8 @@ Here's the reasoning behind this choice:
 3. **Shutdown Control**: By using the websocketCtx context, you can control the timeout and cancellation of the WebSocket server's shutdown process separately from the parent context. This allows you to ensure a graceful shutdown of the WebSocket server, even if the parent context is canceled prematurely.
 4. **Error Handling**: If an error occurs during the shutdown process, you can capture and handle it more easily when you're using a dedicated context for the shutdown, rather than relying on the parent context.
 
-## Day 4:
 
-### Implementation of Append Only FIle (AOF) for disk persistence in memory based store.
+## Implementation of Append Only FIle (AOF) for disk persistence in memory based store.
 
 For persisting the data to disk, we flush all the write/update operations to disk to an Append only file.
 
@@ -388,5 +388,97 @@ func (a* AOF) Close() error {
     return a.file.Close()
 }
 ```
+
+
+## Swiss Table Implementation
+
+### Abstract
+Swiss table is a hash table implementation which is highly efficient in lookups and insertion operations.
+It stores it's elements in contiguous manner, and does not do chaining of elements in case of collision in the insertion operations.
+It is the variation of open addressing hash table.
+
+Key features of Swiss Table:
+1. **Quadratic Probing**: in case of collisions in the hash values, swiss tables uses quadratic probing.
+
+index = (hash(key) + i^2)%array_size; where i is the probe number starting from 0.
+
+2. **Tombstone Marker**:it uses tombstone markers to make the elements as deleted. Instead of being left empty, the places are marked as tombstones. 
+
+#### Working of Tombstones with diff. operations: 
+1. **Lookups**: When during lookups, if tombstones are found, it will continue probing. The logic behind tombstone is that, if the element is removed and if that element caused other previous hashes to be probed due to collisions then, we need to mark is as pseudo-filled, so that if there is lookup for the probed element then it could be possible. If we do not add tombstone here, the traversal will stop immediately as soon as it find empty location, causing lookup failure.
+
+
+WITH TOMBSTONES: 
+```
+Initial state (size=7):
+[A, B, C, _, _, _, _]
+hash(A) = 0
+hash(B) = 0 (collided, probed to 1)
+hash(C) = 1 (collided, probed to 2)
+
+After deleting B:
+[A, T, C, _, _, _, _]  (T = tombstone)
+
+Now when looking up C:
+1. hash(C) = 1
+2. Position 1 is marked as tombstone
+3. Continue probing to find C at position 2 
+```
+
+
+WITHOUT TOMBSTONES: 
+
+```
+[A, _, C, _, _, _, _]
+
+Looking up C:
+1. hash(C) = 1
+2. Position 1 is empty
+3. Stop searching (WRONG - we would never find C!)
+```
+
+2. **Insertion**: During insertion operation, tombstone will be replaced with new elements.
+3 **Deletion**:  We use tombstones instead of empty markers to maintain probe chains.
+
+So tombstones aren't about blocking positions - they're about maintaining the "probe history" so we can still find elements that probed past deleted entries. New insertions are free to reuse tombstone positions.
+
+---
+
+DiceDB uses cockroachdb's swiss table implementation in golang.
+
+In this, the hash function returns a 64 bit hash value. It consists of 2 parts:
+1. H1, 57 bit hash value to identify the element index within the table itself.
+2. H2, 7 bit used to store metadata of this element: empty, deleted or full.
+
+```golang
+import "github.com/cockroachdb/swiss";
+
+// Key is of comparable type: like Struct* not allowed
+type SwissTable[K comparable, V any] struct {
+	M *swiss.Map[K, V]
+}
+
+func (t *SwissTable[K, V]) Put(key K, value V) {
+	t.M.Put(key, value)
+}
+
+func (t *SwissTable[K, V]) Get(key K) (V, bool) {
+	return t.M.Get(key)
+}
+
+func (t *SwissTable[K, V]) Delete(key K) {
+	t.M.Delete(key)
+}
+
+func (t *SwissTable[K, V]) Len() int {
+	return t.M.Len()
+}
+
+func (t *SwissTable[K, V]) All(f func(k K, obj V) bool) {
+	t.M.All(f)
+}
+```
+
+- It creates a generic swiss table wrapper for standard function implementations.
 
 
