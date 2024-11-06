@@ -1,6 +1,6 @@
 ### This repository is for exploring open source repositories and keeping myself accountable
 
-1. [dicedb](https://github.com/MridulDhiman/oss-journal/tree/main/dicedb/commits)
+1. [dicedb](https://github.com/MridulDhiman/oss-journal/tree/main/dicedb/dicedb.md)
 2. [fauxgl](https://github.com/MridulDhiman/oss-journal/blob/main/fauxgl.md)
 3. express
 

@@ -10,9 +10,9 @@ So, whoever is reading this, this personal journal might be eternities long.
 
 ## Index
 
- - [Day 1](#day-1-29th-september-2024)
+ - [Initial Learnings](#initial-learnings)
 
-### Day 1 (29th September, 2024): 
+### Initial Learnings 
 I have cloned this repository and started exploring the components. Basically, I can see a lot of mathematical things like vertex, vector, scaler, meshes etc. Bruh, I'm so dead.
 
 **Vector**: 

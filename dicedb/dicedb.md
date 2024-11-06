@@ -3,10 +3,10 @@ Project started by Arpit Bhayani.
 It is an in-memory realtime database with Redis like commands, and SQL Like reactivity.
 
 ## Index
-- [Main Config](#main-configuration)
+- [Main Configuration](#main-configuration)
 - [DiceDB Internals: Logger](#dicedb-internals-logger)
 - [WebSocket Server Implementation](#websocket-server-implementation)
-- [Implementation of Append Only FIle](#implementation-of-append-only-file-aof-for-disk-persistence-in-memory-based-store)
+- [Implementation of Append Only File](#implementation-of-append-only-file-aof-for-disk-persistence-in-memory-based-store)
 - [Swiss Table implementation](#swiss-table-implementation)
 
 ## Main Configuration
@@ -59,7 +59,7 @@ diff. fields:
 - `IOBufferLengthMAX`: max. length of I/O buffer
 
 
-## DiceDB Internals: Logger: 
+## DiceDB Internals: Logger
 Understanding dicedb internals: logger functionality
 
 - We have diff. levels of log: 
