@@ -1,20 +1,28 @@
 package core
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"strconv"
 	"time"
 )
 
 // NULL bulk string
-var RESP_NIL []byte = []byte("$-1\r\n")
+var (
+	RESP_NIL []byte = []byte("$-1\r\n")
+	RESP_OK []byte = []byte("+OK\r\n")
+	RESP_MINUS_2 []byte = []byte(":-2\r\n")
+	RESP_MINUS_1 []byte = []byte(":-1\r\n")
+	RESP_ZERO []byte = ([]byte(":0\r\n"))
+	RESP_ONE []byte = ([]byte(":1\r\n"))
+)
 
-func evalPING(args []string, conn io.ReadWriter) error {
+
+func evalPING(args []string) []byte {
 	// ping have only 1 argument that is, string and sends it back to the client
 	if len(args) > 1 {
-		return errors.New("ERR wrong no. of arguments for 'PING' command")
+		return Encode(errors.New("ERR wrong no. of arguments for 'PING' command"), false)
 	}
 	// no arguments provided
 	var b []byte
@@ -26,17 +34,13 @@ func evalPING(args []string, conn io.ReadWriter) error {
 		b = Encode(args[0], false)
 	}
 
-	// write to connection
-	if _, err := conn.Write(b); err != nil {
-		return err
-	}
-	return nil
+	return b
 }
 
-func evalSET(args []string, conn io.ReadWriter) error {
+func evalSET(args []string) []byte {
 	// if no. of arguments <= 1 return error
 	if len(args) <= 1 {
-		return errors.New("ERR no. of arguments for 'SET' command")
+		return Encode(errors.New("ERR no. of arguments for 'SET' command"),false)
 	}
 
 	key, value := args[0], args[1]
@@ -49,50 +53,47 @@ func evalSET(args []string, conn io.ReadWriter) error {
 			i++
 			if i == len(args) {
 				// no expiration time found
-				return errors.New("ERR syntax errror in 'SET' command")
+				return Encode(errors.New("ERR syntax errror in 'SET' command"),false)
 			}
 			// convert to base 10, 64 bit integer
 			exDurationSec, err := strconv.ParseInt(args[3], 10, 64)
 			if err != nil {
-				return errors.New("ERR parsed argument is not an integer or out of range")
+				return Encode(errors.New("ERR parsed argument is not an integer or out of range"),false)
 			}
 			exDurationMs = 1000 * exDurationSec
 		default:
-			return errors.New("(error) ERR syntax error")
+			return Encode(errors.New("(error) ERR syntax error"),false)
 		}
 	}
 
 	Put(key, NewObj(value, exDurationMs))
-	conn.Write([]byte("+OK\r\n"))
-	return nil
+	return RESP_OK;
 }
 
-func evalGET(args []string, conn io.ReadWriter) error {
+func evalGET(args []string) []byte {
 	if len(args) != 1 {
-		return errors.New("(error) ERR wrong no. of arguments in 'GET' command")
+		return Encode(errors.New("(error) ERR wrong no. of arguments in 'GET' command"), false)
 	}
 	key := args[0]
 	obj := Get(key)
 
 	if obj == nil {
 		// key does not exist, -2 means key does not exist
-		conn.Write(RESP_NIL)
-		return nil
+		return RESP_NIL
 	}
 
 	if obj.ExpiresAt != -1 && obj.ExpiresAt <= time.Now().UnixMilli() {
 		// key is expired
-		conn.Write(RESP_NIL)
-		return nil
+		return RESP_NIL;
 	}
 	// return the RESP encoded value
-	conn.Write(Encode(obj.Value, false))
-	return nil
+	return Encode(obj.Value, false);
+	
 }
 
-func evalTTL(args []string, conn io.ReadWriter) error {
+func evalTTL(args []string) []byte {
 	if(len(args) != -1) {
-		return errors.New("(error) ERR wrong no. of arguments in 'TTL' command")
+		return Encode(errors.New("(error) ERR wrong no. of arguments in 'TTL' command"),false)
 	}
 
 	var key string = args[0]
@@ -101,25 +102,21 @@ func evalTTL(args []string, conn io.ReadWriter) error {
 
 	if obj == nil {
 		// key does not exist
-		conn.Write([]byte(":-2\r\n"))
-		return nil
+		return RESP_MINUS_2
 	} else if(obj.ExpiresAt == -1) {
 		// key with no expiration
-		conn.Write([]byte(":-1\r\n"));
-		return nil
+		return RESP_MINUS_1
 	}
 
 	durationMsRemaining := obj.ExpiresAt - time.Now().UnixMilli()
 	if durationMsRemaining < 0 {
 		// key has expired: key does not exist 
-		conn.Write([]byte(":-2\r\n"));
-		return nil
+		return RESP_MINUS_2
 	}
-	conn.Write(Encode(int64(durationMsRemaining/1000), false));
-	return nil
+	return Encode(int64(durationMsRemaining/1000), false)
 }
 
-func evalDEL(args []string, conn io.ReadWriter) error {
+func evalDEL(args []string) []byte {
 	var countDeleted int = 0
 
 	for _, arg := range args {
@@ -128,18 +125,17 @@ func evalDEL(args []string, conn io.ReadWriter) error {
 		}
 	}
 
-	conn.Write(Encode(countDeleted, false))
-	return nil
+	return Encode(countDeleted, false)
 }
 
-func evalEXPIRE(args []string, conn io.ReadWriter) error {
+func evalEXPIRE(args []string) []byte {
 	if len(args) < 2 {
-		return errors.New("(error) ERR wrong no. of arguments in 'EXPIRE' command")
+		return Encode(errors.New("(error) ERR wrong no. of arguments in 'EXPIRE' command"),false)
 	}
 	var key string = args[0]
 	durationSec, err := strconv.ParseInt(args[1], 10, 64)
 	if err != nil {
-		return errors.New("(error) ERR integer not found or out of range")
+		return Encode(errors.New("(error) ERR integer not found or out of range"),false)
 	}
 
 	// get key
@@ -148,8 +144,7 @@ func evalEXPIRE(args []string, conn io.ReadWriter) error {
 	if obj == nil {
 		// key does not exist or has expired
 		// timeout cannot be set return integer 0
-		conn.Write([]byte(":0\r\n"))
-		return nil
+		return RESP_ZERO;
 	}
 
 	// set timeout
@@ -157,31 +152,36 @@ func evalEXPIRE(args []string, conn io.ReadWriter) error {
 	obj.ExpiresAt = timeout
 
 	// return integer 1, as timeout set
-	conn.Write([]byte(":1\r\n"))
-	return nil
+	return RESP_ONE;
 }
 
-func EvalAndRespond(cmd *RedisCmd, conn io.ReadWriter) error {
-	fmt.Println("cmd: ", cmd.Cmd)
+func EvalAndRespond(cmds []*RedisCmd, conn io.ReadWriter)  {
+	
 
-	if cmd.Cmd == "" {
-		return errors.New("no cmd found")
+
+	var response []byte
+	buf := bytes.NewBuffer(response)
+
+	for _, cmd:= range cmds {
+		switch cmd.Cmd {
+		case "PING":
+			 evalPING(cmd.Args)
+		case "SET":
+			 buf.Write(evalSET(cmd.Args))
+		case "GET":
+			 buf.Write(evalGET(cmd.Args))
+		case "TTL":
+			buf.Write(evalTTL(cmd.Args))
+		case "DEL":
+			 buf.Write(evalDEL(cmd.Args))
+		case "EXPIRE":
+			buf.Write(evalEXPIRE(cmd.Args))
+		default:
+			buf.Write(evalPING(cmd.Args))
+		}
 	}
 
-	switch cmd.Cmd {
-	case "PING":
-		return evalPING(cmd.Args, conn)
-	case "SET":
-		return evalSET(cmd.Args, conn)
-	case "GET":
-		return evalGET(cmd.Args, conn)
-	case "TTL":
-		return evalTTL(cmd.Args, conn)
-	case "DEL":
-		return evalDEL(cmd.Args, conn)
-	case "EXPIRE":
-		return evalEXPIRE(cmd.Args, conn)
-	default:
-		return evalPING(cmd.Args, conn)
-	}
+	
+
+	conn.Write(buf.Bytes())
 }

@@ -117,7 +117,7 @@ func RunAsyncTCPServer() error {
 			} else {
 				// read the data, parse the payload and response with appt. reply
 				comm:= core.FDComm{Fd: int(events[i].Fd)}
-				cmd, err:= readFromConn(comm)
+				cmds, err:= readFromConn(comm)
 				if err != nil {
 					// close the connection
 					syscall.Close(int(events[i].Fd))
@@ -125,10 +125,7 @@ func RunAsyncTCPServer() error {
 					conn_clients--
 					continue;
 				}
-				if err:= writeToConn(cmd, comm); err != nil {
-					continue;
-				}
-
+				 writeToConn(cmds, comm); 
 			}
 		}
 
