@@ -6,6 +6,7 @@ It is an in-memory realtime database with Redis like commands, and SQL Like reac
 - [Day 1](#day-1)
 - [Day 2](#day-2)
 - [Day 3](#day-3)
+- [Day 4](#day-4)
 
 ## Day 1:
 `main.go`: 
@@ -307,4 +308,85 @@ Here's the reasoning behind this choice:
 2. **WebSocket Server Lifecycle**: The WebSocket server has its own lifecycle, which should be managed independently from the parent context. If the parent context is canceled, it doesn't necessarily mean that the WebSocket server should be immediately shut down.
 3. **Shutdown Control**: By using the websocketCtx context, you can control the timeout and cancellation of the WebSocket server's shutdown process separately from the parent context. This allows you to ensure a graceful shutdown of the WebSocket server, even if the parent context is canceled prematurely.
 4. **Error Handling**: If an error occurs during the shutdown process, you can capture and handle it more easily when you're using a dedicated context for the shutdown, rather than relying on the parent context.
+
+## Day 4:
+
+### Implementation of Append Only FIle (AOF) for disk persistence in memory based store.
+
+For persisting the data to disk, we flush all the write/update operations to disk to an Append only file.
+
+```golang
+    type AOF struct {
+        file *os.file
+        writer *bufio.Writer
+        mutex sync.Mutex 
+        path string // file path
+    }
+
+    func NewAOF(path string) (*AOF, error) {
+        // open file in append mode, write only mode, and if not created, create the file with user permission set(6: owner(rw-)4: group(r--)4: others(r--))
+       f, err:=  os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, fs.FileMode(0644))
+       if err != nil{
+        return nil, err
+       }
+
+
+        return &AOF {
+            file: f,
+            writer: bufio.NewWriter(f),
+            path: path,
+        }
+    }
+
+
+```
+
+#### How to efficiently write to disk
+We need to flush the commands to disk to maintaining durability in the database, but write to disk is very slow operation, via write() system call to the given file descriptor.
+
+We can solve this issue by:
+i. writing data to memory buffer
+ii. flush data from memory to OS buffer/cache
+iii. flush data from OS buffer/cache to file for disk persistance, by synchronizing file with the cache data.
+
+```golang
+// write operations to file: atomic operation via mutex
+    func (a *AOF) Write(data string) error {
+        a.mutex.Lock()
+        defer a.mutex.Unlock()
+
+// write data to memory buffer
+        if _, err := a.writer.WriteString(data + "\n"); err != nil {
+            return err
+        }
+        // flush data to OS buffer/cache
+        if err := a.writer.Flush(); err != nil {
+            return err
+        }
+        // CALLS fsync() system call to flush OS cache to disk
+        return a.file.Sync()
+    }
+```
+
+#### Efficiently Closing the file 
+
+- Atomic operation via mutex
+- flush the remaining buffer to OS buffer
+- close the file
+```golang
+
+func (a* AOF) Close() error {
+    // acquiring lock
+    a.mutex.Lock()
+    defer a.mutex.Unlock()
+    // CRITICAL SECTION
+    // flush the memory buffer to OS cache
+    if err := a.writer.Flush(); err != nil {
+        return err
+    }
+// close the file via it's file descriptor
+    return a.file.Close()
+}
+```
+
 
