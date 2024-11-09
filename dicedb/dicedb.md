@@ -6,7 +6,7 @@ It is an in-memory realtime database with Redis like commands, and SQL Like reac
 - [Main Configuration](#main-configuration)
 - [DiceDB Internals: Logger](#dicedb-internals-logger)
 - [WebSocket Server Implementation](#websocket-server-implementation)
-- [Implementation of Append Only File](#implementation-of-append-only-file-aof-for-disk-persistence-in-memory-based-store)
+- [Implementation of Append Only File](#implementation-of-append-only-file-aof)
 - [Swiss Table implementation](#swiss-table-implementation)
 
 ## Main Configuration
@@ -311,9 +311,11 @@ Here's the reasoning behind this choice:
 4. **Error Handling**: If an error occurs during the shutdown process, you can capture and handle it more easily when you're using a dedicated context for the shutdown, rather than relying on the parent context.
 
 
-## Implementation of Append Only FIle (AOF) for disk persistence in memory based store.
+## Implementation of Append Only FIle (AOF)
 
-For persisting the data to disk, we flush all the write/update operations to disk to an Append only file.
+> **Persistance**: It refers to the writing of data to durable storage, such as a solid-state disk (SSD).
+AOF persistence logs every write operation received by the server. These operations can then be replayed again at server startup, reconstructing the original dataset. Commands are logged using the same format as the Redis protocol itself.
+
 
 ```golang
     type AOF struct {
@@ -347,7 +349,7 @@ We need to flush the commands to disk to maintaining durability in the database,
 We can solve this issue by:
 i. writing data to memory buffer
 ii. flush data from memory to OS buffer/cache
-iii. flush data from OS buffer/cache to file for disk persistance, by synchronizing file with the cache data.
+iii. flush data from OS buffer/cache to file for disk persistance, by synchronizing file with the cache data via fsync() system call.
 
 ```golang
 // write operations to file: atomic operation via mutex
@@ -438,7 +440,7 @@ Looking up C:
 ```
 
 2. **Insertion**: During insertion operation, tombstone will be replaced with new elements.
-3 **Deletion**:  We use tombstones instead of empty markers to maintain probe chains.
+3. **Deletion**:  We use tombstones instead of empty markers to maintain probe chains.
 
 So tombstones aren't about blocking positions - they're about maintaining the "probe history" so we can still find elements that probed past deleted entries. New insertions are free to reuse tombstone positions.
 
@@ -449,6 +451,10 @@ DiceDB uses cockroachdb's swiss table implementation in golang.
 In this, the hash function returns a 64 bit hash value. It consists of 2 parts:
 1. H1, 57 bit hash value to identify the element index within the table itself.
 2. H2, 7 bit used to store metadata of this element: empty, deleted or full.
+
+```bash
+go get -u  github.com/cockroachdb/swiss
+```
 
 ```golang
 import "github.com/cockroachdb/swiss";
@@ -479,6 +485,6 @@ func (t *SwissTable[K, V]) All(f func(k K, obj V) bool) {
 }
 ```
 
-- It creates a generic swiss table wrapper for standard function implementations.
+- It creates a generic swiss table wrapper for standard function based implementations.
 
 
