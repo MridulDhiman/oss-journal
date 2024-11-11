@@ -8,6 +8,7 @@ It is an in-memory realtime database with Redis like commands, and SQL Like reac
 - [WebSocket Server Implementation](#websocket-server-implementation)
 - [Implementation of Append Only File](#implementation-of-append-only-file-aof)
 - [Swiss Table implementation](#swiss-table-implementation)
+- [DiceDB key eviction strategies](#dicedb-key-eviction-strategies)
 
 ## Main Configuration
 `main.go`: 
@@ -486,5 +487,35 @@ func (t *SwissTable[K, V]) All(f func(k K, obj V) bool) {
 ```
 
 - It creates a generic swiss table wrapper for standard function based implementations.
+
+
+### Key Eviction Strategies in DiceDB and Redis
+
+DiceDB/Redis is often as cache whenever we have slower server/database to speed up read accesses. We will store and fetch the results from the memory instead of disk. As, we only cache the already persisted results in the disk, so we can safely evict them.
+There are diff. eviction strategies we can use to make room for more no. of keys in the memory.
+
+- LRU Eviction(`allkeys-lru`): here we evict least recently used key.
+- LFU Eviction(`allkeys-lfu`): here we evict least frequently used key, if there is tie, we evict least recently used key instead.
+- Random(`allkeys-random`): randomly evict keys from memory 
+- Simple First(`simple-first`): deletes first key from the hash table
+
+#### Approximated LRU Algorithm
+**Theoretical LRU**: In a theoretical LRU implementation, when a cache is full, the least recently used key is evicted to make room for a new one. This ensures that the most frequently accessed keys are kept in the cache.
+
+
+Redis does not use a true LRU implementation because it would be more memory-intensive, as the additional memory required to track the recency of access for each key. In a true LRU implementation, the system needs to maintain a doubly-linked list (or a similar data structure) to keep track of the order of key access. This allows the system to quickly identify the least recently used key when eviction is necessary.
+The Redis LRU algorithm uses an approximation of the least recently used keys rather than calculating them exactly. 
+Rather than checking for entire dataset, it takes a sample of keys and evict the least recently used key.
+
+
+**SAMPLING APPROACH**: It takes a sample of given size, and if the percentage of expired keys is greater than threshold value (b/w 0 and 1), then we continue the sampling. Repeat the process, till we get the sample with lesser no. of expired keys.
+
+
+### Approximated LFU algorithm
+Similar to LRU algorithm, LFU algo. also has approximated algorithm and uses `Morris Counter`.
+It is a probabilistic counter to estimate the object access frequency using a small amount of memory. It stores the frequency count in a single byte(8 bit), which is more memory efficient than regular int(32bit).
+But, in reality, this 8 bit does not represent actual freq. count. It encodes the  frequency using a logarithmic scale. Higher the frequency, higher the encoded value in the counter. When an item is accessed, the Morris counter is incremented. The incrementation process is not a simple addition, but rather a probabilistic update based on the current counter value. The higher the current value, the lower the probability of incrementing the counter.
+Over time, the counters for infrequently accessed items will naturally decay, as the probability of incrementing them becomes lower. This allows the LFU algorithm to adapt to changes in access patterns.
+When Redis needs to evict an item from the cache, it samples a small number of keys (similar to the LRU approximation) and selects the one with the lowest Morris counter value as the candidate for eviction
 
 
