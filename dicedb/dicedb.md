@@ -518,4 +518,26 @@ But, in reality, this 8 bit does not represent actual freq. count. It encodes th
 Over time, the counters for infrequently accessed items will naturally decay, as the probability of incrementing them becomes lower. This allows the LFU algorithm to adapt to changes in access patterns.
 When Redis needs to evict an item from the cache, it samples a small number of keys (similar to the LRU approximation) and selects the one with the lowest Morris counter value as the candidate for eviction
 
+#### LRU/LFU Algorithm implementation in DiceDB
+It has priority queue based implementation for evicting keys out of eviction pool.
+It populates the eviction pool, then pops out the elements from eviction pool on basis of their eviction strategy.
 
+#### Logarithmic Counter implementation in DiceDB
+
+```golang
+func incrementLogCounter(counter uint8) uint8 {
+// stop at 255: 8 bit
+	if counter == 255 {
+		return 255;
+	}
+	// generate random float b/w 0 and 1
+	randomFactor := rand.Float32();
+	approxFactor := 1.0/(counter*uint8(10) + 1)
+	if approxFactor > randomFactor {
+	// increment count only if approx. Factor > random factor, as the counter increases the value of approxFactor decreases causing it's probability of incrementing to be decreased.
+		counter++;
+	}
+}
+```
+
+This is useful in scenarios where you want to avoid overwhelming the system with frequent increments for items that are accessed very often, while still allowing for occasional increases in their usage count.
