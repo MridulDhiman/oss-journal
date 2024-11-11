@@ -518,7 +518,48 @@ But, in reality, this 8 bit does not represent actual freq. count. It encodes th
 Over time, the counters for infrequently accessed items will naturally decay, as the probability of incrementing them becomes lower. This allows the LFU algorithm to adapt to changes in access patterns.
 When Redis needs to evict an item from the cache, it samples a small number of keys (similar to the LRU approximation) and selects the one with the lowest Morris counter value as the candidate for eviction
 
-#### LRU/LFU Algorithm implementation in DiceDB
+#### LRU Algorithm implementation in DiceDB
+```golang
+
+import "sort"
+
+type PoolItem struct {
+	key string;
+    lastAccessedAt uint8;
+}
+
+type EvictionPool struct {
+	pool []*PoolItem
+}
+
+type ByIdleTime []*PoolItem;
+
+func (x ByIdleTime) Len() {
+return len(x);
+}
+
+func (a ByIdleTime) Swap(i, j int) {
+a[j], a[i] = a[i], a[j]
+}
+
+func (a ByIdleTime) Less(i, j bool) bool {
+// element with longer idle time removed before the element with shorter idle time
+	return GetIdleTime(a[i].lastAccessedAt) > GetIdleTime(a[j].lastAccessedAt)
+}
+
+
+var maxPoolSize int = 16
+
+func (*Eviction) Push(key string, lastAccessedAt uint8) { 
+     if(len(pq.pool) < maxPoolSize)  {
+          pq.pool = append(pq.pool, &PoolItem{key: key, lastAccessedAt lastAccessedAt})
+         sort.Sort(ByIdleTime(pq.pool));
+     } else if(lastAccessedAt > pq.pool[0].lastAccessedAt) {
+        pq.pool = pq.pool[1:] // evict the 1st element from priority queue
+     }
+}
+```
+
 It has priority queue based implementation for evicting keys out of eviction pool.
 It populates the eviction pool, then pops out the elements from eviction pool on basis of their eviction strategy.
 
