@@ -8,7 +8,7 @@ It is an in-memory realtime database with Redis like commands, and SQL Like reac
 - [WebSocket Server Implementation](#websocket-server-implementation)
 - [Implementation of Append Only File](#implementation-of-append-only-file-aof)
 - [Swiss Table implementation](#swiss-table-implementation)
-- [DiceDB key eviction strategies](#dicedb-key-eviction-strategies)
+- [key eviction strategies in DiceDb and Redis](#key-eviction-strategies-in-dicedb-and-redis)
 
 ## Main Configuration
 `main.go`: 
