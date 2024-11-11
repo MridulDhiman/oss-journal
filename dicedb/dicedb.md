@@ -491,7 +491,7 @@ func (t *SwissTable[K, V]) All(f func(k K, obj V) bool) {
 
 ### Key Eviction Strategies in DiceDB and Redis
 
-DiceDB/Redis is often as cache whenever we have slower server/database to speed up read accesses. We will store and fetch the results from the memory instead of disk. As, we only cache the already persisted results in the disk, so we can safely evict them.
+Redis is often used as a cache whenever we have slower server/database to speed up read accesses. We will store and fetch the results from the memory instead of disk. As, we only cache the already persisted results in the disk, so we can safely evict them.
 There are diff. eviction strategies we can use to make room for more no. of keys in the memory.
 
 - LRU Eviction(`allkeys-lru`): here we evict least recently used key.
